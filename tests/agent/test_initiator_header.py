@@ -83,6 +83,15 @@ def test_provider_without_opt_in_gets_no_initiator_header():
     assert _auxiliary_initiator(agent.session_id) is None
 
 
+def test_a_rejected_reply_is_resent_as_user():
+    agent = _agent(True)
+    cut_off = _reply(False)
+    cut_off.choices[0].message.content = "<REASONING_SCRATCHPAD>still thinking"
+    seen = _sent(agent, [cut_off, _reply(False)])
+    agent.run_conversation("tidy the todo list")
+    assert seen == ["user", "user"]
+
+
 @pytest.mark.parametrize("opted_in, router_replies, backup_replies, on_router, on_backup", [
     pytest.param(True, [], [True, False], {"user"}, ["user", "agent"], id="first-call-fails-over"),
     pytest.param(False, [True], [False], {None}, ["agent"], id="follow-up-fails-over-to-opted-in"),
