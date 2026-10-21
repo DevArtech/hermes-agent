@@ -1682,6 +1682,7 @@ def _run_conversation_turn(
             break
         if _rs.action == "continue":
             continue
+        agent._x_initiator_pending = False
 
         try:
             _ri = _run_phase(normalize_model_response, agent, s)
