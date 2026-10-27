@@ -530,8 +530,14 @@ def get_custom_provider_session_affinity_header(
 
 
 def get_custom_provider_initiator_header(base_url: str) -> bool:
-    """True when the route-matching entry sets ``initiator_header: true`` (opt-in, default off)."""
-    return any(entry.get("initiator_header") is True for entry in _entries_for_route(base_url, None, None))
+    """True when the route-matching entry sets ``initiator_header: true`` (opt-in, default off) and no
+    provider profile serving the host answers ``request_headers``: that provider owns the attribution
+    its host is billed on, so a custom entry pointed at it cannot override it."""
+    if not any(entry.get("initiator_header") is True for entry in _entries_for_route(base_url, None, None)):
+        return False
+    from agent.provider_route_hooks import route_profiles
+
+    return not route_profiles("request_headers", base_url=base_url)
 
 
 def get_custom_provider_context_length(

@@ -83,6 +83,30 @@ def test_provider_without_opt_in_gets_no_initiator_header():
     assert _auxiliary_initiator(agent.session_id) is None
 
 
+def test_a_host_whose_provider_answers_request_headers_ignores_the_opt_in(request):
+    import providers
+    from providers.base import ProviderProfile
+
+    class Owner(ProviderProfile):
+        def request_headers(self, *, base_url, model="", user_initiated=False):
+            return {}
+
+    providers.list_providers()
+    providers.register_provider(Owner(name="hostowner", base_url=_BASE, hostnames=("127.0.0.1",)))
+
+    def _cleanup():
+        providers._REGISTRY.pop("hostowner", None)
+        providers._SOURCES.pop("hostowner", None)
+        providers._PROVIDER_LIST_CACHE = None
+
+    request.addfinalizer(_cleanup)
+    agent = _agent(True)
+    seen = _sent(agent, [_reply(True), _reply(False)])
+    agent.run_conversation("tidy the todo list")
+    assert seen == [None, None]
+    assert _auxiliary_initiator(agent.session_id) is None
+
+
 def test_a_rejected_reply_is_resent_as_user():
     agent = _agent(True)
     cut_off = _reply(False)
